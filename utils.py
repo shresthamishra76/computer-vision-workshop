@@ -116,10 +116,19 @@ def find_subject_contour(edges: np.ndarray, min_area: int = 5000):
     Returns:
         The largest qualifying contour (ndarray of points), or None.
     """
-    # raise NotImplementedError
-    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    contours = [cnt for cnt in contours if cv2.contourArea(cnt) >= min_area]
-    return max(contours, key=cv2.contourArea) if contours else None
+    # Connect broken edges so contour areas reflect the full subject.
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=2)
+
+    contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    qualifying = [cnt for cnt in contours if cv2.contourArea(cnt) >= min_area]
+    if qualifying:
+        return max(qualifying, key=cv2.contourArea)
+
+    # Fallback for images where Canny yields many small disconnected contours.
+    relaxed_min_area = max(100, min_area // 10)
+    relaxed = [cnt for cnt in contours if cv2.contourArea(cnt) >= relaxed_min_area]
+    return max(relaxed, key=cv2.contourArea) if relaxed else None
 
 
 def crop_roi(img: np.ndarray, contour) -> tuple:
