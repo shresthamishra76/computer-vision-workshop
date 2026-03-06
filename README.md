@@ -1,6 +1,6 @@
 # CV Workshop — Image Classifier
 
-**OpenCV + GoogLeNet (ImageNet)  ·  Beginner Computer Vision Workshop**
+**OpenCV + GoogLeNet (ImageNet) · Beginner Computer Vision Workshop**
 
 ---
 
@@ -47,6 +47,7 @@ cv-workshop/
 │   ├── car.jpg
 │   └── bird.jpg
 ```
+
 ---
 
 ## How to Work Through This
@@ -105,28 +106,37 @@ annotated image on screen
 
 ## Some ImageNet Categories to Try
 
-| Animals | Vehicles | Objects | Food |
-|---------|----------|---------|------|
-| golden retriever | sports car | laptop | pizza |
-| tabby cat | school bus | backpack | banana |
-| bald eagle | ambulance | rocking chair | ice cream |
-| hammerhead shark | mountain bike | sunglasses | coffee mug |
+| Animals          | Vehicles      | Objects       | Food       |
+| ---------------- | ------------- | ------------- | ---------- |
+| golden retriever | sports car    | laptop        | pizza      |
+| tabby cat        | school bus    | backpack      | banana     |
+| bald eagle       | ambulance     | rocking chair | ice cream  |
+| hammerhead shark | mountain bike | sunglasses    | coffee mug |
 
 Check `synset_words.txt` for the full list of 1000 valid labels.
 
 ---
+
 ## Questions - MUST BE DONE TO ENTER RAFFLE
 
 1. In your own words, explain why we preprocess the image with grayscale, blur, and edge detection before passing it to the model. What would happen if we skipped one of those steps?
 
+Preprocessing (grayscale → blur → edges) simplifies the image so contour detection can find the subject reliably before classification. If you skip grayscale, blur, or edges, you usually get noisier or broken contours, which leads to a worse crop and weaker model predictions.
+
 2. When you ran your classifier on an image, what did it predict and how confident was it? Did the result surprise you — and if it got something wrong, why do you think that happened?
+
+On a sample run, the classifier predicted “Rottweiler” at about 21.9% confidence rate. This was a wrong inference mainly due to the lack of a sophisticated model with better accuracy. The model we used is a pre-trained GoogLeNet, which is not fine-tuned for our specific images. Additionally, the quality of the cropped region and the presence of background noise could have also contributed to the misclassification.
 
 3. We focused on the top prediction (the supposed classification) — but the model outputs 1000 scores simultaneously. What does it mean that the scores for other classes are non-zero? What are those numbers telling you?
 
+The other non-zero class scores mean the model sees partial evidence for multiple classes, not just one. Those values are the model’s confidence distribution across 1000 possibilities, showing which alternatives it thinks are plausible.
+
 4. Where would you take this project next? Think about different models you could swap in, new kinds of images you'd want to classify, or features you'd add to make it more useful in the real world.
+
+Next, I’d try a stronger modern model such as YOLO which would give much better bounding box accuracy and classification performance. I’d also want to classify more complex scenes with multiple objects, and add features like multi-label classification, object detection, or even caption generation. This is something YOLO is great at.
 
 ## Reference Docs
 
-- OpenCV DNN:  https://docs.opencv.org/4.x/d6/d0f/group__dnn.html
-- OpenCV all:  https://docs.opencv.org/4.x/
-- NumPy:       https://numpy.org/doc/stable/reference/
+- OpenCV DNN: https://docs.opencv.org/4.x/d6/d0f/group__dnn.html
+- OpenCV all: https://docs.opencv.org/4.x/
+- NumPy: https://numpy.org/doc/stable/reference/
