@@ -36,7 +36,11 @@ def load_labels(filepath: str) -> list:
     Returns:
         List of 1000 strings, e.g. ["tench, Tinca tinca", "goldfish", ...]
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+
+    with open(filepath, 'r') as f:
+        labels = [line.strip().split(' ', 1)[1] for line in f]
+    return labels
 
 
 def load_model(prototxt_path: str, caffemodel_path: str):
@@ -54,7 +58,8 @@ def load_model(prototxt_path: str, caffemodel_path: str):
     Returns:
         A cv2.dnn_Net object.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    return cv2.dnn.readNetFromCaffe(prototxt_path, caffemodel_path)
 
 
 def prepare_blob(roi: np.ndarray) -> np.ndarray:
@@ -73,7 +78,8 @@ def prepare_blob(roi: np.ndarray) -> np.ndarray:
     Returns:
         ndarray of shape (1, 3, 224, 224), dtype float32.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    return cv2.dnn.blobFromImage(roi, 1.0, (224, 224), (104, 117, 123), swapRB=False, crop=False)
 
 
 def run_inference(net, blob: np.ndarray) -> np.ndarray:
@@ -87,7 +93,9 @@ def run_inference(net, blob: np.ndarray) -> np.ndarray:
     Returns:
         ndarray of shape (1, 1000).
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    net.setInput(blob)
+    return net.forward()
 
 
 def get_top_prediction(predictions: np.ndarray, labels: list) -> tuple:
@@ -101,7 +109,10 @@ def get_top_prediction(predictions: np.ndarray, labels: list) -> tuple:
     Returns:
         (label: str, confidence: float)
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    scores = predictions.ravel()          # handles (1,1000) or (1000,)
+    top_index = int(np.argmax(scores))    # Python int
+    return (labels[top_index], float(scores[top_index]))  # Python float
 
 
 def get_top_k_predictions(predictions: np.ndarray,
@@ -119,7 +130,10 @@ def get_top_k_predictions(predictions: np.ndarray,
         List of k tuples: [(label: str, confidence: float), ...]
         sorted descending by confidence.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    scores = predictions.ravel()          # handles (1,1000) or (1000,)
+    top_k_indices = np.argsort(scores)[::-1][:k]
+    return [(labels[i], float(scores[i])) for i in top_k_indices]
 
 
 def draw_prediction(img: np.ndarray,
@@ -143,7 +157,11 @@ def draw_prediction(img: np.ndarray,
     Returns:
         The annotated image.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    x, y, w, h = box
+    cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
+    cv2.putText(img, f"{label}  {confidence*100:.1f}%", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+    return img
 
 
 # =============================================================
