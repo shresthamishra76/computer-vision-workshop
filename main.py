@@ -68,7 +68,43 @@ def run_pipeline(image_path: str, target_label: str = "") -> tuple:
     Returns:
         (label, confidence) or None if no subject was found.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    # 1. Load the image
+    img = load_image(image_path)
+    if img is None:
+        print(f"[!] Could not load image at '{image_path}'.")
+        return None
+    # 2. Load the 1000 class labels
+    labels = load_labels(LABELS_FILE)
+    # 3. Load the DNN model
+    net = load_model(MODEL_PROTOTXT, MODEL_WEIGHTS)
+    # 4. Preprocess the image (grayscale → blur → edges)
+    gray = preprocess(img)
+    # 5. Find the largest subject contour
+    contour = find_subject_contour(gray)
+    if contour is None:
+        print("[!] No subject contour found.")
+        return None
+    # 6. Crop the ROI from the color image
+    roi, box = crop_roi(img, contour)
+    # 7. Prepare the blob
+    blob = prepare_blob(roi)
+    # 8. Run inference
+    predictions = run_inference(net, blob)
+    # 9. Get the top-1 prediction
+    label, confidence = get_top_prediction(predictions, labels)
+    # 10. If target_label was provided, print whether it matched
+    if target_label:
+        match = (label == target_label)
+        print(f"Prediction: {label}  ({confidence*100:.1f}%) — Match: {match}")
+    # 11. Draw the bounding box and label on the image
+    annotated_img = draw_prediction(img, box, label, confidence)
+    # 12. Display the result with cv2.imshow / cv2.waitKey(0)
+    cv2.imshow("Classification Result", annotated_img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    # 13. Return (label, confidence)
+    return (label, confidence)
 
 
 # =============================================================
@@ -94,7 +130,52 @@ def run_batch(folder: str) -> None:
     Args:
         folder: Path to directory containing images.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    # Load the labels and model ONCE, outside the loop
+    labels = load_labels(LABELS_FILE)
+    net = load_model(MODEL_PROTOTXT, MODEL_WEIGHTS)
+    # Initialize summary variables
+    total_processed = 0
+    high_confidence_count = 0
+    best_prediction = ("", 0.0, "")  # (label, confidence, filename)
+    # Process each image in the folder
+    for filename in os.listdir(folder):
+        if not (filename.lower().endswith('.jpg') or filename.lower().endswith('.png')):
+            continue  # Skip non-image files
+        image_path = os.path.join(folder, filename)
+        try:
+            img = load_image(image_path)
+            if img is None:
+                print(f"[!] Could not load image at '{image_path}'. Skipping.")
+                continue
+            gray = preprocess(img)
+            contour = find_subject_contour(gray)
+            if contour is None:
+                print(f"[!] No subject contour found in '{filename}'. Skipping.")
+                continue
+            roi, box = crop_roi(img, contour)
+            blob = prepare_blob(roi)
+            predictions = run_inference(net, blob)
+            top_k = get_top_k_predictions(predictions, labels, k=3)
+            print(f"Top 3 for '{filename}': {top_k}")
+            total_processed += 1
+            # Check if top confidence >= 70%
+            if top_k[0][1] >= 0.7:
+                high_confidence_count += 1
+            # Update best prediction if this one is better
+            if top_k[0][1] > best_prediction[1]:
+                best_prediction = (top_k[0][0], top_k[0][1], filename)
+        except FileNotFoundError as e:
+            print(f"[!] File not found: {e}. Skipping '{filename}'.")
+            continue
+    # Print summary
+    print("\nBatch Summary:")
+    print(f"Total images processed: {total_processed}")
+    print(f"Images with top confidence >= 70%: {high_confidence_count}")
+    if best_prediction[1] > 0:
+        print(f"Best prediction: {best_prediction[0]}  ({best_prediction[1]*100:.1f}%) in '{best_prediction[2]}'")
+    else:
+        print("No valid predictions made.")
 
 
 # =============================================================
